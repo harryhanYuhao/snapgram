@@ -39,6 +39,8 @@ const SingupForm = () => {
     <Form {...form}>
       <div className="sm:w-420 flex-center flex-col">
         <img src="/assets/images/logo.svg" alt="logo" className="w-24 h-24" />
+
+        <h2 className="h3-bold md:h2-bold pt-5 sm:pt-12"> Create Your Account</h2>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

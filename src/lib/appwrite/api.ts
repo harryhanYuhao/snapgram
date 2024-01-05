@@ -1,19 +1,24 @@
 import { ID } from "appwrite";
 
 import { INewUser } from "@/types";
-import { account, avatars, databases} from "./config";
+import { account, avatars, databases } from "./config";
 import { appwriteConfig } from "./config";
 
 export async function createUserAccount(user: INewUser) {
   try {
     // response will be type of appwrite User
     // https://appwrite.io/docs/references/cloud/models/user
+    // appwrite api requires four field. Last one being name
     const response = await account.create(
       ID.unique(),
       user.email,
       user.password,
       user.lastName.concat(", ").concat(user.firstName),
     );
+
+    if (!response) {
+      throw new Error("Account creation response is null or undefined");
+    }
 
     const avatarUrl = avatars.getInitials(response.name);
 
@@ -25,6 +30,10 @@ export async function createUserAccount(user: INewUser) {
       imageUrl: avatarUrl,
       userName: user.username,
     });
+
+    if (!newUser) {
+      throw new Error("Saving user details to database resulted in null or undefined");
+    }
 
     return newUser; // Return the response upon successful creation
   } catch (error) {
@@ -42,8 +51,8 @@ export async function saveUserToDB(user: {
 }) {
   try {
     // https://appwrite.io/docs/references/cloud/client-web/databases
-    const newUser = await databases.createDocument(
-      appwriteConfig.databaseId, 
+    return await databases.createDocument(
+      appwriteConfig.databaseId,
       appwriteConfig.userCollectionId,
       ID.unique(),
       {
@@ -53,8 +62,8 @@ export async function saveUserToDB(user: {
         lastName: user.lastName,
         imageUrl: user.imageUrl,
         userName: user.userName,
-      })
-    return newUser;
+      },
+    );
   } catch (error) {
     console.error(error);
     throw error;

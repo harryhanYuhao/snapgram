@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { createUserAccount } from "@/lib/appwrite/api";
 // import React from 'react'
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 
 import {
   Form,
@@ -12,15 +14,34 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SignUpValidationSchema } from "@/lib/validation";
+import { useToast } from "@/components/ui/use-toast";
+
 import Loader from "@/lib/shared/Loader";
-import { Link } from "react-router-dom";
-import { createUserAccount } from "@/lib/appwrite/api";
+
+//DEBUG:
+import { appwriteConfig } from "@/lib/appwrite/config";
 
 const SingupForm = () => {
+  // DEBUG:
+  function DEBUG() {
+    toast({
+      title: "Signed up successfully",
+      description:
+        appwriteConfig.userCollectionId +
+        "post\n" +
+        appwriteConfig.postCollectionId +
+        "saves\n" +
+        appwriteConfig.saveCollectionId,
+    });
+  }
+
   const isLoading = false;
+  const { toast } = useToast();
+
   // form template from shadcn
   const form = useForm<z.infer<typeof SignUpValidationSchema>>({
     resolver: zodResolver(SignUpValidationSchema),
@@ -30,8 +51,23 @@ const SingupForm = () => {
   async function onSubmit(values: z.infer<typeof SignUpValidationSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
-    const newUser = await createUserAccount(values);
-    console.log(newUser);
+    try {
+      // TODO: toast aesthetics, shall behave differently on different devices
+      toast({
+        title: "Signed up successfully",
+        description: "Account Created on " + new Date().toLocaleString(),
+      });
+      const newUser = await createUserAccount(values);
+
+      if (!newUser) throw new Error("Failed to create user");
+
+      // SIGN in 
+      // const session await signInAccount();
+      console.log(newUser);
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   return (
@@ -77,7 +113,7 @@ const SingupForm = () => {
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input type="text" className="shad-input" {...field} />
+                  <Input type="text" autoComplete="username" className="shad-input" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -90,7 +126,7 @@ const SingupForm = () => {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="text" className="shad-input" {...field} />
+                  <Input type="email" autoComplete="email" className="shad-input" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -110,12 +146,25 @@ const SingupForm = () => {
             )}
           />
           <p className="text-small-regular text-light-2 text-center mt-2">
-            Already have an account?{" "} <Link to="/sign-in" className="text-primary-500 text-small-semibold ml-1">Log in</Link>
+            Already have an account?{" "}
+            <Link to="/sign-in" className="text-primary-500 text-small-semibold ml-1">
+              Log in
+            </Link>
           </p>
           <Button type="submit" className="shad-button_primary">
-            {isLoading ? <div className="flex-center gap-2"><Loader />Loading...</div> : <div>Sign Up</div>}
+            {isLoading ? (
+              <div className="flex-center gap-2">
+                <Loader />
+                Loading...
+              </div>
+            ) : (
+              <div>Sign Up</div>
+            )}
           </Button>
         </form>
+        <Button className="shad-button_secondary" onClick={DEBUG}>
+          Toast
+        </Button>
       </div>
     </Form>
   );

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { createUserAccount } from "@/lib/appwrite/api";
+// import { createUserAccount } from "@/lib/appwrite/api";
 // import React from 'react'
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -22,8 +22,9 @@ import { useToast } from "@/components/ui/use-toast";
 
 import Loader from "@/lib/shared/Loader";
 
-//DEBUG:
+// DEBUG: 
 import { appwriteConfig } from "@/lib/appwrite/config";
+import { useCreateUserAccount, useSignInAccount } from "@/lib/react-query/queiresAndMutations";
 
 const SingupForm = () => {
   // DEBUG:
@@ -38,9 +39,12 @@ const SingupForm = () => {
         appwriteConfig.saveCollectionId,
     });
   }
+  // DEBUG:END
 
-  const isLoading = false;
   const { toast } = useToast();
+
+  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } = useCreateUserAccount();
+  const { mutateAsync: signInAccount, isPending: isSigningIn } = useSignInAccount(); 
 
   // form template from shadcn
   const form = useForm<z.infer<typeof SignUpValidationSchema>>({
@@ -61,8 +65,14 @@ const SingupForm = () => {
 
       if (!newUser) throw new Error("Failed to create user");
 
-      // SIGN in 
-      // const session await signInAccount();
+      // SIGN in
+      const session = await signInAccount({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (!session) throw new Error("Failed to sign in");
+
       console.log(newUser);
     } catch (error) {
       console.log(error);
@@ -152,7 +162,7 @@ const SingupForm = () => {
             </Link>
           </p>
           <Button type="submit" className="shad-button_primary">
-            {isLoading ? (
+            {isCreatingAccount ? (
               <div className="flex-center gap-2">
                 <Loader />
                 Loading...
@@ -166,6 +176,7 @@ const SingupForm = () => {
           Toast
         </Button>
       </div>
+      
     </Form>
   );
 };
